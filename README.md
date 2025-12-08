@@ -1,84 +1,61 @@
-📘 Quest-Cloner v83 — AdventureMS
+Quest-Cloner v83 — AdventureMS
 MapleStory Quest XML Cloner & GUI Tool
 
-A simple Python + GUI utility for duplicating MapleStory quest entries across exported Classic XML files (Act.img.xml, Check.img.xml, QuestInfo.img.xml, etc.).
-This fully removes the need to manually copy/paste blocks inside HaRepacker.
+A Python and GUI-based utility for duplicating MapleStory quest entries using exported Classic XML files (Act.img.xml, Check.img.xml, QuestInfo.img.xml, etc.).
+This tool replaces the need to manually copy/paste quest blocks inside HaRepacker.
 
-You can use either the command-line script (quest_helper.py) or the GUI EXE (quest_helper_gui.exe).
+Both a command-line script (quest_helper.py) and a GUI EXE (quest_helper_gui.exe) are included.
 
-✨ Features
+Features
+--------
 
-🔁 Clone an existing quest ID to a new quest ID
+- Clone an existing quest ID to a new quest ID.
+- Automatically update QuestInfo fields:
+  - name
+  - summary
+  - rewardSummary
+- Works across all major quest XMLs:
+  - Act.img.xml
+  - Check.img.xml
+  - Exclusive.img.xml
+  - PQuest.img.xml
+  - QuestInfo.img.xml
+  - Say.img.xml
+- Creates automatic .bak backups before modifying files.
+- Optional debug mode for detailed output.
+- Fully interactive; no command-line arguments required.
 
-📝 Automatically updates QuestInfo text fields:
+Requirements
+-----------
 
-name
+Python Version:
+- Python 3.10–3.12
+- Folder containing Classic XML exports:
+  Act.img.xml
+  Check.img.xml
+  Exclusive.img.xml
+  PQuest.img.xml
+  QuestInfo.img.xml
+  Say.img.xml
+  quest_helper.py
 
-summary
+These files must come from HaRepacker:
+File → Export → Classic XML
 
-rewardSummary
+GUI / EXE Version:
+- No Python required
+- The EXE must be placed in the same folder as the exported .img.xml files.
 
-📂 Works across all major quest XMLs:
+Setup
+-----
 
-Act.img.xml
+1. Export Quest.wz from HaRepacker as Classic XML.
+2. Place all .img.xml files in a single folder.
+3. Place either:
+   - quest_helper.py (Python version)
+   - quest_helper_gui.exe (GUI version)
 
-Check.img.xml
-
-Exclusive.img.xml
-
-PQuest.img.xml
-
-QuestInfo.img.xml
-
-Say.img.xml
-
-💾 Automatically creates safe .bak backups
-
-🧩 GUI version (EXE) — no Python required
-
-🔍 Optional debug mode to show all operations
-
-🧑‍💻 Interactive prompts — no arguments needed
-
-📦 Requirements
-For Python version:
-
-Python 3.10–3.12
-
-Folder containing the exported Classic XML quest files:
-
-Act.img.xml
-Check.img.xml
-Exclusive.img.xml
-PQuest.img.xml
-QuestInfo.img.xml
-Say.img.xml
-quest_helper.py
-
-For EXE version:
-
-No Python needed
-
-Just place quest_helper_gui.exe directly next to your XML files
-
-Important: These XMLs come from
-HaRepacker → File → Export → Export as Classic XML
-The tool does NOT read .img or .wz files — only .img.xml.
-
-📥 Setup
-
-Export Quest.wz as Classic XML using HaRepacker.
-
-Put all .img.xml files into one folder.
-
-Either:
-
-Put quest_helper.py in that folder (Python version), or
-
-Put quest_helper_gui.exe in that folder (GUI version).
-
-Optional: Run script for CLI version
-
+(Optional) Windows launcher script:
 Create run_quest_helper.bat:
 
 @echo off
@@ -86,136 +63,97 @@ cd /d "%~dp0"
 python quest_helper.py
 pause
 
-▶️ Running the Tool
-💻 Python Version
-cd /d "path\to\your\QuestXML"
+Running the Tool
+----------------
+
+Python Version:
+cd /d "path\to\QuestXML"
 python quest_helper.py
 
-🖱 GUI / EXE Version
-
-Just double-click:
-
+GUI / EXE Version:
+Double-click:
 quest_helper_gui.exe
 
+The EXE must be inside the same folder as the .img.xml files.
 
-Must be in the SAME FOLDER as your .xml files.
-
-🧩 Usage Flow
+Usage
+-----
 
 You will be prompted for:
 
-Base Quest ID
-The ID to copy from (must exist)
+- Base Quest ID (the existing quest to clone)
+- New Quest ID (the new quest to create)
+- Optional new fields:
+  name
+  summary
+  rewardSummary
 
-New Quest ID
-The ID to create (must not exist yet)
+Leave fields blank to reuse the original text from the base quest.
 
-Optional fields:
+Example:
+Base quest ID: 20011
+New quest ID: 3000
+New name: My Custom Quest
+New summary: Talk to the NPC to begin.
+New reward summary: Adventure begins.
 
-Enter new text for:
+How It Works
+------------
 
-Quest name
+For each quest XML file:
 
-Quest summary
+1. Finds <imgdir name="QuestID">
+2. Creates a deep clone
+3. Renames it to the new quest ID
+4. Updates QuestInfo fields (if provided)
+5. Saves the modified XML
+6. Creates an automatic backup:
+   filename.xml.bak
 
-Reward summary
+Reimporting into the Client
+---------------------------
 
-Leave blank → keeps original text.
+1. Open Quest.wz in HaRepacker
+2. Right-click → Import XML
+3. Select the modified .img.xml files
+4. Save Quest.wz
+5. Replace the client’s Quest.wz with the updated version
 
-📝 Example
-Base quest ID to copy FROM: 20011
-New quest ID to create: 9000001
+Your new quest now appears in-game.
 
-New quest NAME: My Custom Quest
-New quest SUMMARY: Talk to the NPC to begin.
-New quest REWARD SUMMARY: Adventure begins!
+Server-Side Requirements
+------------------------
 
-🔧 What the Script Does
+Creating a new quest in the client is not enough.
+The server must also contain the same quest ID or the quest will fail to function.
 
-For each quest XML:
+The server must contain:
+- Act (rewards)
+- Check (kill requirements)
+- Info (QuestInfo)
 
-Finds the <imgdir name="QuestID"> node
+If cloning 1037 to 3000:
+Client must contain 3000
+Server must also contain 3000
 
-Deep-clones it
+Troubleshooting
+---------------
 
-Renames it to the new quest ID
+“Act.img.xml not found in this folder”:
+You are running the tool in the wrong directory.
 
-Updates QuestInfo fields if provided:
+“QuestInfo.img.xml not found in script folder”:
+The EXE is in a folder containing .img files, not .img.xml files.
 
-name
+Quest appears but does not track kills:
+Server does not contain the cloned quest.
 
-summary
-
-rewardSummary
-
-Saves changes
-
-Creates .bak backups automatically
-
-🔄 After Editing (Client-Side Workflow)
-
-Open Quest.wz in HaRepacker
-
-Right-click → Import XML
-
-Select the modified XML files
-
-Save Quest.wz
-
-Place updated Quest.wz into your client folder
-
-Your custom quest now appears in-game.
-
-⚠️ Important — Step 4 (SERVER-SIDE QUEST DATA)
-
-If the server does not contain the same quest ID block, the quest will:
-
-Accept correctly
-
-Complete visually
-
-BUT NOT TRACK KILLS / REWARDS
-
-Your server must contain cloned quest data for:
-
-✔ Act (rewards)
-✔ Check (kill requirements)
-✔ Info (QuestInfo fields)
-
-If you're cloning quest 1037 → 3000:
-
-Client must have Quest 3000
-
-Server must also have Quest 3000
-
-Otherwise:
-
-❌ Mob kills do not update
-❌ Rewards do not apply
-❌ Quest never completes properly
-
-🧰 Troubleshooting Guide
-❌ “Act.img.xml not found in this folder”
-
-You're running the tool in the wrong folder.
-Put the EXE or script next to the XMLs.
-
-❌ “QuestInfo.img.xml not found in script folder”
-
-You ran the EXE in a folder with .img files, not .img.xml files.
-
-❌ Quest appears in-game but does not award items/EXP
-
-Your server does NOT contain the cloned quest data — see Step 4.
-
-❌ New quest not created
-
-Your base quest ID doesn't exist.
+Quest not created:
+The base quest ID does not exist.
 Search for:
-
 <imgdir name="1037">
 
-📄 License
+License
+-------
 
 MIT License
-Free to use, modify, redistribute, and include in private servers.
