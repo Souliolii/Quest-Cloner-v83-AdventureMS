@@ -1,77 +1,127 @@
 # Quest-Cloner v83 — AdventureMS
 ### MapleStory Quest XML Cloner & Professional GUI Editor
 
-A modern, fully graphical tool for cloning, editing, and managing MapleStory quests using Classic XML exports (Act.img.xml, Check.img.xml, QuestInfo.img.xml, etc.).
+A modern, fully graphical tool for cloning, editing, and managing MapleStory quests using Classic XML exports  
+(Act.img.xml, Check.img.xml, QuestInfo.img.xml, etc.).
 
-This project replaces manual XML editing and HaRepacker copy‑paste with a clean, automated workflow.
+This project replaces manual XML editing and HaRepacker copy-paste with a clean, automated workflow.
 
 ---
 
 # 🚀 Recommended: Use the EXE Release
-Most users **do NOT need Python anymore**.
+Most users **do NOT need Python**.
 
-Download the latest release EXE, place it in the same folder as your exported `.img.xml` files, and run it.  
-The EXE automatically detects its working directory and loads/saves XML files correctly.
+Download the latest **EXE release**, place it next to your `.img.xml` files, and launch it.  
+The tool automatically detects its working directory and safely reads/writes your XML files.
 
-Python scripts are included only for developers who want to modify the tool.
+Python scripts are included for developers or contributors.
 
 ---
 
 # ✨ Features
 
-### 🔍 Quest Browser + Search
-- Search quests in **QuestInfo.img.xml** by ID or name  
-- Instant filtered results  
-- Click any quest to load it into the Base Quest panel  
-- View full structured data: text, logs, requirements, rewards  
+## 🔍 Quest Browser + Smart Search
+Search quests instantly with:
+- **ID or name**
+- **Advanced filters:**
+  - `npc:<id>` → quests starting/ending at that NPC  
+  - `mob:<id>` → quests requiring that mob  
+  - `item:<id>` → quests requiring *or* rewarding that item  
+  - `rx:<pattern>` → regex search on `id: name`
 
-### 📚 Quest Cloning
-- Clone any quest ID to a new custom quest ID
-- Automatically updates:
+Click any quest to preview all its data:
+- Text & logs
+- QuestInfo fields
+- Requirements
+- Rewards
+
+---
+
+## 📚 Quest Cloning
+- Clone any quest to **one or multiple new IDs**
+  - Single: `3000`
+  - Batch: `3000 3001 3002` or `3000,3001,3002`
+- Editable before saving
+- Automatically updates QuestInfo fields:
   - `name`
   - `summary`
   - `rewardSummary`
 - Copies all logs, requirements, and rewards
-- Fully editable before saving
-- Prevents invalid or accidental overwrites
+- **Overwrite protection**:
+  - Warns if an ID already exists  
+  - Requires confirmation before replacing
+- Automatic `.bak` backups
 
-### 📝 Quest Editing (GUI)
-- Edit all QuestInfo fields  
-- Edit requirements from Check.img:
-  - Start NPC
-  - End NPC
-  - Level minimum  
-  - Required items  
-  - Required mobs  
-  - Required prerequisite quests  
-- Edit Act.img rewards:
-  - EXP
-  - Items gained
-  - Items consumed  
-- **Automatic reward correction**  
-  Ensures EXP/items are placed in stage `1` (completion)  
-  and never incorrectly inside stage `0`.
+---
 
-### 🗑 Quest Deletion
-- Delete a quest by:
-  - Selecting it in the left quest list, OR  
-  - Typing the ID manually  
-- Deletes across all XML files
-- Creates `.bak` backups automatically
+## 📝 Quest Editing (GUI)
 
-### 🎨 GUI Features
+### Edit QuestInfo:
+- Name  
+- Type  
+- Area  
+- Parent  
+- Order  
+- Auto Start / Auto Complete  
+- Logs 0–2  
+- Summary  
+- Reward Summary  
+- Demand Summary  
+
+### Edit Requirements (Check.img):
+- Start NPC  
+- End NPC  
+- Min Level  
+- Required Items  
+- Required Mobs  
+- Prerequisite Quests  
+
+### Edit Rewards (Act.img):
+- EXP  
+- Gained items  
+- Consumed items  
+- **Automatic stage correction**  
+  - Puts all rewards in **stage 1**  
+  - Ensures stage `0` never contains EXP/items  
+
+### Validation
+- Inline red highlighting for malformed lines:
+  - Items / mobs must be: `itemId count`
+  - Prereq quests: `questId state`
+- Must fix errors before saving
+
+### Quality of Life
+- **Copy Base → New** button  
+- **Clear New Form** button  
+- **Collapsible sections**:
+  - QuestInfo  
+  - Requirements  
+  - Rewards  
+  (Massively reduces scrolling)
+
+---
+
+## 🗑 Quest Deletion
+Delete a quest across **all XML files** by:
+- Selecting it in the list **or**
+- Typing its ID manually  
+
+Creates `.bak` backups automatically.
+
+---
+
+# 🎨 GUI Highlights
 - Dark theme  
-- Fully scrollable editor  
-- 3‑column structured layout  
-- Copy Base → New button  
-- Clear New Quest Form button  
-- No auto-fill of New ID (prevents mistakes)
+- 3-column layout  
+- Fully scrollable  
+- Clean section grouping  
+- Batch cloning support  
+- Error-proof editing  
 
 ---
 
 # 📁 Required Files
-
-These must be exported from **HaRepacker**:
+Export the following from **HaRepacker → File → Export → Classic XML**:
 
 ```
 Act.img.xml
@@ -82,132 +132,96 @@ QuestInfo.img.xml
 Say.img.xml
 ```
 
-Export using:
-
-**File → Export → Classic XML**
-
-Place the EXE or Python scripts in the same folder as these XMLs.
+Place them in the same folder as the EXE or Python script.
 
 ---
 
 # ⚙️ Running the Tool
 
-## ✅ GUI / EXE Version (Recommended)
-Just double‑click:
+## EXE (Recommended)
+Double-click:
 
 ```
-quest_helper_gui.exe
+QuestHelper.exe
 ```
 
-The EXE must be in the same folder as your `.img.xml` files.
+Must be in the same folder as your `.img.xml` files.
 
-No Python required.
-
----
-
-## 🐍 Python Version (Developer Use Only)
-
-### Run:
-```
-python quest_helper_gui.py
-```
-
-or command-line version:
-
+## Python (Developer Mode)
 ```
 python quest_helper.py
 ```
+
+There is **no separate CLI version** anymore.
 
 ---
 
 # 🧠 Usage Overview
 
-1. Select a base quest in the left search panel  
-2. Enter a **New Quest ID**  
-3. (Optional) Edit fields you want to change  
-4. Press **Clone / Save**  
-5. The tool updates all relevant XML files and creates backups  
+1. Select a base quest  
+2. Enter one or more **New IDs**  
+3. (Optional) edit the quest  
+4. Click **Clone / Save**  
+5. XML files update + backups created  
 
-To delete a quest:  
-- Select it in the left list → click **Delete Quest**
+Delete quests: select or type an ID → **Delete Quest**
 
 ---
 
-# 🔄 How It Works (Internals)
+# 🔄 How It Works Internally
 
-For each XML file, the tool:
-
-1. Locates `<imgdir name="BaseID">`
-2. Deep‑clones it
-3. Renames clone to `<imgdir name="NewID">`
-4. Applies overrides from UI (QuestInfo, requirements, rewards)
-5. Writes back to file
-6. Creates a `.bak` backup before modifying
+For each XML:
+1. Finds `<imgdir name="BaseID">`
+2. Deep-clones to `<imgdir name="NewID">`
+3. Applies new QuestInfo / Requirements / Rewards
+4. Forces Act.img rewards to stage `1`
+5. Writes updated XML
+6. Creates `.bak` backup
 
 ---
 
 # 🔧 Reimporting Into MapleStory Client
 
 1. Open **Quest.wz** in HaRepacker  
-2. Import XML:
-   - Act.img.xml  
-   - Check.img.xml  
-   - QuestInfo.img.xml  
-   - Exclusive.img.xml  
-   - PQuest.img.xml  
-   - Say.img.xml  
+2. Import modified Classic XML files  
 3. Save Quest.wz  
-4. Replace your client’s Quest.wz with the new one
+4. Replace client’s Quest.wz  
 
-Your custom quest now exists in-game.
+Your custom quests will appear in-game.
 
 ---
 
 # 🖥 Server-Side Requirements
 
-The **server must also contain** the same quest ID.
+Client-side changes alone are not enough.
 
-If your client has:
-
-```
-3000
-```
-
-Your server must also define:
-
+Your server **must** define the same quest ID with:
+- Act data  
 - Check data  
-- Act rewards  
-- Info text  
+- QuestInfo  
 
-Otherwise quests will:
-- Not track kills  
-- Not give rewards  
-- Not complete properly  
+Otherwise:
+- Kills won’t track  
+- Rewards won’t appear  
+- Quests won’t complete  
 
 ---
 
 # ❗ Troubleshooting
 
-### ⚠️ “Act.img.xml not found”
-You ran the EXE in the wrong folder.  
-Place it next to your `.img.xml` files.
+### “Act.img.xml not found”
+Place the EXE/py script in the folder with your `.img.xml` files.
 
-### ⚠️ “QuestInfo.img.xml not found”
-You placed the EXE in a folder with `.img` files, not `.img.xml` files.
+### “Quest does not give rewards”
+Server Act data is missing.
 
-### ⚠️ Quest does not give rewards
-Server-side Act data for the new quest ID is missing.
+### “Kills don’t track”
+Server Check data is missing.
 
-### ⚠️ Quest does not track kills
-Server-side Check data for the quest is missing.
-
-### ⚠️ The quest does not appear
-The base quest ID you tried to clone does not exist.  
-Search for its `<imgdir name="ID">` in QuestInfo.img.xml.
+### “Quest doesn't appear in game”
+Base ID was invalid or not present in QuestInfo.
 
 ---
 
 # 📜 License
-MIT License  
-Use freely in private or commercial MapleStory servers.
-
+MIT License
