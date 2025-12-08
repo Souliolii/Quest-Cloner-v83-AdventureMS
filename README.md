@@ -1,14 +1,16 @@
 📘 Quest-Cloner v83 — AdventureMS
-MapleStory Quest XML Cloner
+MapleStory Quest XML Cloner & GUI Tool
 
-A simple Python utility that duplicates MapleStory quest entries across exported Classic XML files (Act, Check, QuestInfo, Say, etc.).
-This removes the need to manually copy/paste quest blocks in HaRepacker.
+A simple Python + GUI utility for duplicating MapleStory quest entries across exported Classic XML files (Act.img.xml, Check.img.xml, QuestInfo.img.xml, etc.).
+This fully removes the need to manually copy/paste blocks inside HaRepacker.
+
+You can use either the command-line script (quest_helper.py) or the GUI EXE (quest_helper_gui.exe).
 
 ✨ Features
 
 🔁 Clone an existing quest ID to a new quest ID
 
-📝 Automatically updates QuestInfo fields:
+📝 Automatically updates QuestInfo text fields:
 
 name
 
@@ -30,15 +32,18 @@ QuestInfo.img.xml
 
 Say.img.xml
 
-💾 Creates automatic .bak backups before modifying anything
+💾 Automatically creates safe .bak backups
+
+🧩 GUI version (EXE) — no Python required
 
 🔍 Optional debug mode to show all operations
 
-🧑‍💻 Fully interactive — no arguments needed
+🧑‍💻 Interactive prompts — no arguments needed
 
 📦 Requirements
+For Python version:
 
-Python 3.8+
+Python 3.10–3.12
 
 Folder containing the exported Classic XML quest files:
 
@@ -50,71 +55,92 @@ QuestInfo.img.xml
 Say.img.xml
 quest_helper.py
 
+For EXE version:
 
-These files come from HaRepacker → Export as Classic XML.
+No Python needed
+
+Just place quest_helper_gui.exe directly next to your XML files
+
+Important: These XMLs come from
+HaRepacker → File → Export → Export as Classic XML
+The tool does NOT read .img or .wz files — only .img.xml.
 
 📥 Setup
 
 Export Quest.wz as Classic XML using HaRepacker.
 
-Place all exported .xml files in a single folder.
+Put all .img.xml files into one folder.
 
-Put quest_helper.py into that folder.
+Either:
 
-(Optional): Create a run script to ensure the tool runs from the correct directory:
+Put quest_helper.py in that folder (Python version), or
 
-run_quest_helper.bat
+Put quest_helper_gui.exe in that folder (GUI version).
+
+Optional: Run script for CLI version
+
+Create run_quest_helper.bat:
 
 @echo off
 cd /d "%~dp0"
 python quest_helper.py
 pause
 
-▶️ Usage
-
-Run from Command Prompt:
-
+▶️ Running the Tool
+💻 Python Version
 cd /d "path\to\your\QuestXML"
 python quest_helper.py
 
+🖱 GUI / EXE Version
 
-Or double-click run_quest_helper.bat.
+Just double-click:
+
+quest_helper_gui.exe
+
+
+Must be in the SAME FOLDER as your .xml files.
+
+🧩 Usage Flow
 
 You will be prompted for:
 
-Base Quest ID – the quest you want to duplicate (must exist)
+Base Quest ID
+The ID to copy from (must exist)
 
-New Quest ID – the quest ID you want to create
+New Quest ID
+The ID to create (must not exist yet)
 
 Optional fields:
 
-New quest name
+Enter new text for:
 
-New quest summary
+Quest name
 
-New quest reward summary
+Quest summary
 
-Leave any of these blank to keep the original text.
+Reward summary
 
-Example
-Base quest ID to copy FROM (existing ID): 20011
+Leave blank → keeps original text.
+
+📝 Example
+Base quest ID to copy FROM: 20011
 New quest ID to create: 9000001
 
 New quest NAME: My Custom Quest
-New quest SUMMARY: Talk to NPC to begin.
+New quest SUMMARY: Talk to the NPC to begin.
 New quest REWARD SUMMARY: Adventure begins!
 
 🔧 What the Script Does
 
-For each quest XML file:
+For each quest XML:
 
-Locates the <imgdir name="<QuestID>"> block.
+Finds the <imgdir name="QuestID"> node
 
-Deep-clones it.
+Deep-clones it
 
-Renames it to the new quest ID.
+Renames it to the new quest ID
 
-If editing QuestInfo.img.xml, updates:
+Updates QuestInfo fields if provided:
 
 name
 
@@ -122,69 +148,74 @@ summary
 
 rewardSummary
 
-Saves the updated XML.
+Saves changes
 
-Creates a safety backup:
+Creates .bak backups automatically
 
-filename.xml.bak
+🔄 After Editing (Client-Side Workflow)
 
-🔄 After Editing (Client-Side)
+Open Quest.wz in HaRepacker
 
-Open Quest.wz in HaRepacker.
+Right-click → Import XML
 
-Right-click → Import XML.
+Select the modified XML files
 
-Select the modified XML files.
+Save Quest.wz
 
-Save Quest.wz.
+Place updated Quest.wz into your client folder
 
-Place the updated Quest.wz in your MapleStory client folder.
+Your custom quest now appears in-game.
 
-Your new quest now appears in-game and can be accepted.
+⚠️ Important — Step 4 (SERVER-SIDE QUEST DATA)
 
-⚠️ Important — Step 4 (Server-Side Quest Data!)
+If the server does not contain the same quest ID block, the quest will:
 
-If your server does not load the updated quest files,
-the new quest will not track kills, rewards, or progress, even if the client shows it correctly.
+Accept correctly
 
-When cloning quests (e.g., 1037 → 3000):
+Complete visually
 
-✔️ Client must contain quest 3000
-✔️ Server must ALSO contain quest 3000
+BUT NOT TRACK KILLS / REWARDS
 
-This means:
+Your server must contain cloned quest data for:
 
-Duplicate the same quest structures on the server side:
+✔ Act (rewards)
+✔ Check (kill requirements)
+✔ Info (QuestInfo fields)
 
-Check (kill requirements)
+If you're cloning quest 1037 → 3000:
 
-Act (rewards)
+Client must have Quest 3000
 
-Info (QuestInfo)
+Server must also have Quest 3000
 
-Your server must load these updated WZ/XML files OR use its own quest data definitions.
+Otherwise:
 
-Without this step:
+❌ Mob kills do not update
+❌ Rewards do not apply
+❌ Quest never completes properly
 
-The quest will accept but will not track mob kills or complete properly.
+🧰 Troubleshooting Guide
+❌ “Act.img.xml not found in this folder”
 
-🧰 Troubleshooting
-❌ "Act.img.xml not found in this folder, skipping."
+You're running the tool in the wrong folder.
+Put the EXE or script next to the XMLs.
 
-You ran the script in the wrong directory.
-Use the .bat launcher or navigate to the XML folder manually.
+❌ “QuestInfo.img.xml not found in script folder”
+
+You ran the EXE in a folder with .img files, not .img.xml files.
+
+❌ Quest appears in-game but does not award items/EXP
+
+Your server does NOT contain the cloned quest data — see Step 4.
 
 ❌ New quest not created
 
-Confirm the base quest ID exists. Search inside your XML for:
+Your base quest ID doesn't exist.
+Search for:
 
 <imgdir name="1037">
 
-Quest accepts but does not track kills
-
-Your server does not contain the new quest’s mob requirement.
-See Step 4 above.
-
 📄 License
 
-MIT License — free to use, modify, and redistribute.
+MIT License
+Free to use, modify, redistribute, and include in private servers.
