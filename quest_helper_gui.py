@@ -109,16 +109,13 @@ def clone_node(root, base_id:int, new_id:int):
     if base_id == new_id:
         node = get_imgdir(root, new_id)
         if node is None:
-            # shouldn't happen, but copy base as new
             node = copy.deepcopy(base)
             node.set("name", str(new_id))
             root.append(node)
             return node, f"Created quest {new_id} from {base_id}."
         return node, f"Editing quest {new_id} (no clone)."
-    # different IDs
     existing = get_imgdir(root, new_id)
     if existing is not None:
-        # replace existing node
         root.remove(existing)
     node = copy.deepcopy(base)
     node.set("name", str(new_id))
@@ -182,7 +179,6 @@ def extract_questinfo(root, quest_id:int):
                 data["autoStart"] = bool(iv)
             elif name == "autoComplete":
                 data["autoComplete"] = bool(iv)
-    # Fallback for summary if missing
     if not data["summary"] and data["log0"]:
         data["summary"] = data["log0"]
     return data
@@ -205,7 +201,6 @@ def apply_questinfo(root, quest_id:int, data:dict):
     node = get_imgdir(root, quest_id)
     if node is None:
         node = ET.SubElement(root, "imgdir", name=str(quest_id))
-    # strings
     _set_string(node, "name", data.get("name",""))
     _set_string(node, "type", data.get("type",""))
     _set_string(node, "parent", data.get("parent",""))
@@ -215,7 +210,6 @@ def apply_questinfo(root, quest_id:int, data:dict):
     _set_string(node, "2", data.get("log2",""))
     _set_string(node, "summary", data.get("summary",""))
     _set_string(node, "rewardSummary", data.get("rewardSummary",""))
-    # ints/bools (skip if None/blank)
     area = data.get("area")
     if isinstance(area,str):
         area = area.strip() or None
@@ -368,7 +362,6 @@ def apply_requirements(root, quest_id:int, req:dict):
     set_int(s0, "lvmin", req.get("lvmin"))
     set_int(s1, "npc", req.get("end_npc"))
 
-    # clear existing item/mob/quest sections
     def clear_child(name):
         for st in node.findall("./imgdir"):
             child = st.find(f"./imgdir[@name='{name}']")
@@ -389,6 +382,7 @@ def apply_requirements(root, quest_id:int, req:dict):
             e = ET.SubElement(parent, "imgdir", name=str(idx))
             ET.SubElement(e, "int", name="id", value=str(iid))
             ET.SubElement(e, "int", name="count", value=str(count))
+
     mobs_pairs = _parse_id_count_lines(req.get("mobs_text") or "")
     clear_child("mob")
     if mobs_pairs:
@@ -398,6 +392,7 @@ def apply_requirements(root, quest_id:int, req:dict):
             e = ET.SubElement(parent, "imgdir", name=str(idx))
             ET.SubElement(e, "int", name="id", value=str(mid))
             ET.SubElement(e, "int", name="count", value=str(count))
+
     quests_pairs = _parse_id_state_lines(req.get("quests_text") or "")
     clear_child("quest")
     if quests_pairs:
@@ -468,7 +463,6 @@ def apply_rewards(root, quest_id:int, rewards:dict):
                 if stage is None:
                     stage = ET.SubElement(node, "imgdir", name="1")
                 ET.SubElement(stage, "int", name="exp", value=str(exp_int))
-    # items
     def clear_item_children():
         for stage in node.findall("./imgdir"):
             child = stage.find("./imgdir[@name='item']")
@@ -506,7 +500,6 @@ class QuestHelperGUI:
         self.root = root
         root.title("Maple Quest Helper - Flat Editor (Dark)")
 
-        # load XMLs
         self.qtree, self.qroot = load_xml(os.path.join(SCRIPT_DIR, "QuestInfo.img.xml"))
         if self.qroot is None:
             messagebox.showerror("Error", "QuestInfo.img.xml not found in script folder.")
@@ -516,6 +509,14 @@ class QuestHelperGUI:
         self._build_ui()
         if self.qroot is not None:
             self.populate_listbox()
+
+        # mouse wheel scroll for whole editor
+        self.root.bind_all("<MouseWheel>", self._on_mousewheel)
+
+    # mouse wheel handler
+    def _on_mousewheel(self, event):
+        if hasattr(self, "canvas"):
+            self.canvas.yview_scroll(-1 * int(event.delta / 120), "units")
 
     # ---- UI helpers ----
     def _set_entry(self, entry, text, readonly=False):
@@ -571,6 +572,7 @@ class QuestHelperGUI:
         ttk.Entry(top, textvariable=self.new_id_var, width=8).grid(row=0,column=3,sticky="w",padx=(3,10))
         ttk.Button(top, text="Preview IDs", command=self.preview_ids).grid(row=0,column=4,padx=(5,0))
         ttk.Button(top, text="Clone / Save", command=self.clone_quest).grid(row=0,column=5,padx=(5,0))
+        ttk.Button(top, text="Delete Quest", command=self.delete_quest).grid(row=0,column=6,padx=(5,0))
 
         # scrollable right
         container = ttk.Frame(main)
@@ -579,6 +581,7 @@ class QuestHelperGUI:
         container.columnconfigure(0, weight=1)
 
         canvas = tk.Canvas(container, bg=DARK_BG, highlightthickness=0)
+        self.canvas = canvas
         vbar = ttk.Scrollbar(container, orient="vertical", command=canvas.yview)
         canvas.configure(yscrollcommand=vbar.set)
         canvas.grid(row=0, column=0, sticky="nsew")
@@ -591,18 +594,26 @@ class QuestHelperGUI:
             canvas.configure(scrollregion=canvas.bbox("all"))
         self.inner.bind("<Configure>", on_config)
 
+        # three columns: base | transfer button | new
         self.inner.columnconfigure(0, weight=1)
-        self.inner.columnconfigure(1, weight=1)
+        self.inner.columnconfigure(1, weight=0)
+        self.inner.columnconfigure(2, weight=1)
 
         self.base_col = ttk.LabelFrame(self.inner, text="Base Quest (source, read-only)")
-        self.new_col = ttk.LabelFrame(self.inner, text="New Quest (editable)")
         self.base_col.grid(row=0,column=0,sticky="nsew",padx=(0,5))
-        self.new_col.grid(row=0,column=1,sticky="nsew",padx=(5,0))
         self.base_col.columnconfigure(0, weight=1)
+
+        # transfer column with copy + clear buttons
+        self.transfer_col = ttk.Frame(self.inner)
+        self.transfer_col.grid(row=0, column=1, sticky="ns", padx=2)
+        ttk.Button(self.transfer_col, text=">>> Copy >>>", command=self.copy_base_to_new).pack(pady=(10, 5))
+        ttk.Button(self.transfer_col, text="Clear New", command=self.clear_new_form).pack(pady=(0, 10))
+
+        self.new_col = ttk.LabelFrame(self.inner, text="New Quest (editable)")
+        self.new_col.grid(row=0,column=2,sticky="nsew",padx=(5,0))
         self.new_col.columnconfigure(0, weight=1)
 
         r = 0
-        # Name
         ttk.Label(self.base_col, text="Name:").grid(row=r,column=0,sticky="w")
         ttk.Label(self.new_col, text="Name:").grid(row=r,column=0,sticky="w")
         r+=1
@@ -610,35 +621,35 @@ class QuestHelperGUI:
         self.new_name = ttk.Entry(self.new_col)
         self.base_name.grid(row=r,column=0,sticky="we",pady=(0,4))
         self.new_name.grid(row=r,column=0,sticky="we",pady=(0,4)); r+=1
-        # Type
+
         ttk.Label(self.base_col, text="Type:").grid(row=r,column=0,sticky="w")
         ttk.Label(self.new_col, text="Type:").grid(row=r,column=0,sticky="w"); r+=1
         self.base_type = ttk.Entry(self.base_col, state="readonly")
         self.new_type = ttk.Entry(self.new_col)
         self.base_type.grid(row=r,column=0,sticky="we",pady=(0,4))
         self.new_type.grid(row=r,column=0,sticky="we",pady=(0,4)); r+=1
-        # Area
+
         ttk.Label(self.base_col, text="Area:").grid(row=r,column=0,sticky="w")
         ttk.Label(self.new_col, text="Area:").grid(row=r,column=0,sticky="w"); r+=1
         self.base_area = ttk.Entry(self.base_col, state="readonly")
         self.new_area = ttk.Entry(self.new_col)
         self.base_area.grid(row=r,column=0,sticky="we",pady=(0,4))
         self.new_area.grid(row=r,column=0,sticky="we",pady=(0,4)); r+=1
-        # Parent
+
         ttk.Label(self.base_col, text="Parent:").grid(row=r,column=0,sticky="w")
         ttk.Label(self.new_col, text="Parent:").grid(row=r,column=0,sticky="w"); r+=1
         self.base_parent = ttk.Entry(self.base_col, state="readonly")
         self.new_parent = ttk.Entry(self.new_col)
         self.base_parent.grid(row=r,column=0,sticky="we",pady=(0,4))
         self.new_parent.grid(row=r,column=0,sticky="we",pady=(0,4)); r+=1
-        # Order
+
         ttk.Label(self.base_col, text="Order:").grid(row=r,column=0,sticky="w")
         ttk.Label(self.new_col, text="Order:").grid(row=r,column=0,sticky="w"); r+=1
         self.base_order = ttk.Entry(self.base_col, state="readonly")
         self.new_order = ttk.Entry(self.new_col)
         self.base_order.grid(row=r,column=0,sticky="we",pady=(0,4))
         self.new_order.grid(row=r,column=0,sticky="we",pady=(0,4)); r+=1
-        # Auto start/complete
+
         ttk.Label(self.base_col, text="Auto Start:").grid(row=r,column=0,sticky="w")
         ttk.Label(self.new_col, text="Auto Start:").grid(row=r,column=0,sticky="w"); r+=1
         self.base_autostart = ttk.Entry(self.base_col, state="readonly")
@@ -646,6 +657,7 @@ class QuestHelperGUI:
         self.new_autostart_var = tk.BooleanVar()
         self.new_autostart_cb = ttk.Checkbutton(self.new_col, variable=self.new_autostart_var, text="Enabled")
         self.new_autostart_cb.grid(row=r,column=0,sticky="w",pady=(0,4)); r+=1
+
         ttk.Label(self.base_col, text="Auto Complete:").grid(row=r,column=0,sticky="w")
         ttk.Label(self.new_col, text="Auto Complete:").grid(row=r,column=0,sticky="w"); r+=1
         self.base_autocomplete = ttk.Entry(self.base_col, state="readonly")
@@ -654,7 +666,6 @@ class QuestHelperGUI:
         self.new_autocomplete_cb = ttk.Checkbutton(self.new_col, variable=self.new_autocomplete_var, text="Enabled")
         self.new_autocomplete_cb.grid(row=r,column=0,sticky="w",pady=(0,4)); r+=1
 
-        # helper for multi-line text fields
         def add_text_pair(label, height):
             nonlocal r
             ttk.Label(self.base_col, text=label).grid(row=r,column=0,sticky="w")
@@ -672,7 +683,6 @@ class QuestHelperGUI:
         self.base_reward_summary, self.new_reward_summary = add_text_pair("Reward Summary:", 2)
         self.base_demand, self.new_demand = add_text_pair("Demand Summary:", 2)
 
-        # Requirements
         self.base_start_npc, self.new_start_npc = add_text_pair("Start NPC (stage 0):", 1)
         self.base_end_npc, self.new_end_npc = add_text_pair("End NPC (stage 1):", 1)
         self.base_lvmin, self.new_lvmin = add_text_pair("Min Level:", 1)
@@ -680,7 +690,6 @@ class QuestHelperGUI:
         self.base_req_mobs, self.new_req_mobs = add_text_pair("Required Mobs (id count per line):", 3)
         self.base_req_quests, self.new_req_quests = add_text_pair("Prereq Quests (id state per line):", 3)
 
-        # Rewards
         self.base_exp, self.new_exp = add_text_pair("EXP Reward:", 1)
         self.base_rew_gain, self.new_rew_gain = add_text_pair("Reward Items Gained (id count per line):", 3)
         self.base_rew_lose, self.new_rew_lose = add_text_pair("Reward Items Consumed (id count per line):", 3)
@@ -706,26 +715,20 @@ class QuestHelperGUI:
         line = self.quest_list.get(idx)
         qid = line.split(":",1)[0].strip()
         self.base_id_var.set(qid)
-        if not self.new_id_var.get().strip():
-            self.new_id_var.set(qid)
+        # NEW ID is NOT auto-filled anymore; user must type it manually
         self.preview_ids()
 
     def preview_ids(self):
         if self.qroot is None:
             return
         base_id_str = self.base_id_var.get().strip()
-        new_id_str = self.new_id_var.get().strip() or base_id_str
-        if not base_id_str.isdigit() or not new_id_str.isdigit():
-            messagebox.showwarning("Invalid IDs","Base ID and New ID must be numbers.")
+        if not base_id_str.isdigit():
+            messagebox.showwarning("Invalid IDs","Base ID must be a number.")
             return
-        base_id = int(base_id_str); new_id = int(new_id_str)
+        base_id = int(base_id_str)
 
-        # QuestInfo
+        # base quest info
         base_q = extract_questinfo(self.qroot, base_id)
-        new_node = get_imgdir(self.qroot, new_id)
-        new_q = extract_questinfo(self.qroot, new_id) if new_node is not None else base_q
-
-        # fill base entries
         self._set_entry(self.base_name, base_q["name"], readonly=True)
         self._set_entry(self.base_type, base_q["type"], readonly=True)
         self._set_entry(self.base_area, "" if base_q["area"] is None else str(base_q["area"]), readonly=True)
@@ -740,56 +743,115 @@ class QuestHelperGUI:
         self._set_text(self.base_reward_summary, base_q["rewardSummary"], readonly=True)
         self._set_text(self.base_demand, base_q["demandSummary"], readonly=True)
 
-        # fill new editable side
-        self._set_entry(self.new_name, new_q["name"])
-        self._set_entry(self.new_type, new_q["type"])
-        self._set_entry(self.new_area, "" if new_q["area"] is None else str(new_q["area"]))
-        self._set_entry(self.new_parent, new_q["parent"])
-        self._set_entry(self.new_order, "" if new_q["order"] is None else str(new_q["order"]))
-        self.new_autostart_var.set(bool(new_q["autoStart"]))
-        self.new_autocomplete_var.set(bool(new_q["autoComplete"]))
-        self._set_text(self.new_log0, new_q["log0"])
-        self._set_text(self.new_log1, new_q["log1"])
-        self._set_text(self.new_log2, new_q["log2"])
-        self._set_text(self.new_summary, new_q["summary"])
-        self._set_text(self.new_reward_summary, new_q["rewardSummary"])
-        self._set_text(self.new_demand, new_q["demandSummary"])
+        # base requirements
+        base_req = extract_requirements(self.check_root, base_id)
+        self._set_text(self.base_start_npc,
+                       "" if base_req["start_npc"] is None else str(base_req["start_npc"]),
+                       readonly=True)
+        self._set_text(self.base_end_npc,
+                       "" if base_req["end_npc"] is None else str(base_req["end_npc"]),
+                       readonly=True)
+        self._set_text(self.base_lvmin,
+                       "" if base_req["lvmin"] is None else str(base_req["lvmin"]),
+                       readonly=True)
+        self._set_text(self.base_req_items, base_req["items_text"], readonly=True)
+        self._set_text(self.base_req_mobs, base_req["mobs_text"], readonly=True)
+        self._set_text(self.base_req_quests, base_req["quests_text"], readonly=True)
+
+        # base rewards
+        base_rew = extract_rewards(self.act_root, base_id)
+        self._set_text(self.base_exp,
+                       "" if base_rew["exp"] is None else str(base_rew["exp"]),
+                       readonly=True)
+        self._set_text(self.base_rew_gain, base_rew["items_gain_text"], readonly=True)
+        self._set_text(self.base_rew_lose, base_rew["items_lose_text"], readonly=True)
+        # right side intentionally NOT touched
+
+    # ---------- copy / clear new ----------
+
+    def copy_base_to_new(self):
+        """Copy all base quest fields into the editable new quest side."""
+        if self.qroot is None:
+            return
+        base_id_str = self.base_id_var.get().strip()
+        if not base_id_str.isdigit():
+            messagebox.showwarning("Invalid base ID", "Base ID must be a number to copy from.")
+            return
+        base_id = int(base_id_str)
+
+        base_q = extract_questinfo(self.qroot, base_id)
+        base_req = extract_requirements(self.check_root, base_id)
+        base_rew = extract_rewards(self.act_root, base_id)
+
+        # QuestInfo -> new side
+        self._set_entry(self.new_name, base_q["name"])
+        self._set_entry(self.new_type, base_q["type"])
+        self._set_entry(self.new_area, "" if base_q["area"] is None else str(base_q["area"]))
+        self._set_entry(self.new_parent, base_q["parent"])
+        self._set_entry(self.new_order, "" if base_q["order"] is None else str(base_q["order"]))
+        self.new_autostart_var.set(bool(base_q["autoStart"]))
+        self.new_autocomplete_var.set(bool(base_q["autoComplete"]))
+        self._set_text(self.new_log0, base_q["log0"])
+        self._set_text(self.new_log1, base_q["log1"])
+        self._set_text(self.new_log2, base_q["log2"])
+        self._set_text(self.new_summary, base_q["summary"])
+        self._set_text(self.new_reward_summary, base_q["rewardSummary"])
+        self._set_text(self.new_demand, base_q["demandSummary"])
 
         # Requirements
-        base_req = extract_requirements(self.check_root, base_id)
-        new_req = extract_requirements(self.check_root, new_id) if get_imgdir(self.check_root, new_id) is not None else base_req
-
-        def set_pair(base_widget, new_widget, base_val, new_val):
-            self._set_text(base_widget, base_val, readonly=True)
-            self._set_text(new_widget, new_val)
-
-        set_pair(self.base_start_npc, self.new_start_npc,
-                 "" if base_req["start_npc"] is None else str(base_req["start_npc"]),
-                 "" if new_req["start_npc"] is None else str(new_req["start_npc"]))
-        set_pair(self.base_end_npc, self.new_end_npc,
-                 "" if base_req["end_npc"] is None else str(base_req["end_npc"]),
-                 "" if new_req["end_npc"] is None else str(new_req["end_npc"]))
-        set_pair(self.base_lvmin, self.new_lvmin,
-                 "" if base_req["lvmin"] is None else str(base_req["lvmin"]),
-                 "" if new_req["lvmin"] is None else str(new_req["lvmin"]))
-        set_pair(self.base_req_items, self.new_req_items,
-                 base_req["items_text"], new_req["items_text"])
-        set_pair(self.base_req_mobs, self.new_req_mobs,
-                 base_req["mobs_text"], new_req["mobs_text"])
-        set_pair(self.base_req_quests, self.new_req_quests,
-                 base_req["quests_text"], new_req["quests_text"])
+        self._set_text(self.new_start_npc,
+                       "" if base_req["start_npc"] is None else str(base_req["start_npc"]))
+        self._set_text(self.new_end_npc,
+                       "" if base_req["end_npc"] is None else str(base_req["end_npc"]))
+        self._set_text(self.new_lvmin,
+                       "" if base_req["lvmin"] is None else str(base_req["lvmin"]))
+        self._set_text(self.new_req_items, base_req["items_text"])
+        self._set_text(self.new_req_mobs, base_req["mobs_text"])
+        self._set_text(self.new_req_quests, base_req["quests_text"])
 
         # Rewards
-        base_rew = extract_rewards(self.act_root, base_id)
-        new_rew = extract_rewards(self.act_root, new_id) if get_imgdir(self.act_root, new_id) is not None else base_rew
+        self._set_text(self.new_exp,
+                       "" if base_rew["exp"] is None else str(base_rew["exp"]))
+        self._set_text(self.new_rew_gain, base_rew["items_gain_text"])
+        self._set_text(self.new_rew_lose, base_rew["items_lose_text"])
 
-        set_pair(self.base_exp, self.new_exp,
-                 "" if base_rew["exp"] is None else str(base_rew["exp"]),
-                 "" if new_rew["exp"] is None else str(new_rew["exp"]))
-        set_pair(self.base_rew_gain, self.new_rew_gain,
-                 base_rew["items_gain_text"], new_rew["items_gain_text"])
-        set_pair(self.base_rew_lose, self.new_rew_lose,
-                 base_rew["items_lose_text"], new_rew["items_lose_text"])
+    def clear_new_form(self):
+        """Clear all editable fields on the right side (but keep New ID)."""
+        # entries
+        for entry in [
+            self.new_name,
+            self.new_type,
+            self.new_area,
+            self.new_parent,
+            self.new_order,
+        ]:
+            entry.configure(state="normal")
+            entry.delete(0, tk.END)
+
+        # checkboxes
+        self.new_autostart_var.set(False)
+        self.new_autocomplete_var.set(False)
+
+        # texts
+        for text_widget in [
+            self.new_log0,
+            self.new_log1,
+            self.new_log2,
+            self.new_summary,
+            self.new_reward_summary,
+            self.new_demand,
+            self.new_start_npc,
+            self.new_end_npc,
+            self.new_lvmin,
+            self.new_req_items,
+            self.new_req_mobs,
+            self.new_req_quests,
+            self.new_exp,
+            self.new_rew_gain,
+            self.new_rew_lose,
+        ]:
+            text_widget.configure(state="normal")
+            text_widget.delete("1.0", tk.END)
 
     # ---------- collect data & save ----------
 
@@ -863,13 +925,56 @@ class QuestHelperGUI:
                 messages.append("    Act rewards updated.")
             tree.write(path, encoding="utf-8", xml_declaration=True)
 
-        # reload xml
         self.qtree, self.qroot = load_xml(os.path.join(SCRIPT_DIR, "QuestInfo.img.xml"))
         self.check_tree, self.check_root = load_xml(os.path.join(SCRIPT_DIR, "Check.img.xml"))
         self.act_tree, self.act_root = load_xml(os.path.join(SCRIPT_DIR, "Act.img.xml"))
         self.populate_listbox()
         self.preview_ids()
         messagebox.showinfo("Clone / Save complete", "\n".join(messages))
+
+    # ---------- delete quest ----------
+
+    def delete_quest(self):
+        """Delete quest by New ID from all XMLs (New ID required)."""
+        qid_str = self.new_id_var.get().strip()
+        if not qid_str:
+            messagebox.showwarning("Delete Quest", "Enter a quest ID in New ID to delete.")
+            return
+        if not qid_str.isdigit():
+            messagebox.showwarning("Delete Quest", "Quest ID must be a number.")
+            return
+        qid = int(qid_str)
+        if not messagebox.askyesno("Delete Quest",
+                                   f"Delete quest {qid} from all XMLs?\n"
+                                   "Backups (.bak) will be created first."):
+            return
+
+        messages = []
+        for fname in FILES:
+            path = os.path.join(SCRIPT_DIR, fname)
+            if not os.path.isfile(path):
+                messages.append(f"[INFO] {fname} not found, skipping.")
+                continue
+            backup = path + ".bak"
+            shutil.copy2(path, backup)
+            tree, root = load_xml(path)
+            if root is None:
+                messages.append(f"[WARN] Could not parse {fname}, skipping.")
+                continue
+            node = get_imgdir(root, qid)
+            if node is not None:
+                root.remove(node)
+                messages.append(f"{fname}: removed quest {qid}.")
+                tree.write(path, encoding="utf-8", xml_declaration=True)
+            else:
+                messages.append(f"{fname}: quest {qid} not present.")
+        # reload QuestInfo etc so list updates
+        self.qtree, self.qroot = load_xml(os.path.join(SCRIPT_DIR, "QuestInfo.img.xml"))
+        self.check_tree, self.check_root = load_xml(os.path.join(SCRIPT_DIR, "Check.img.xml"))
+        self.act_tree, self.act_root = load_xml(os.path.join(SCRIPT_DIR, "Act.img.xml"))
+        self.populate_listbox()
+        self.preview_ids()
+        messagebox.showinfo("Delete Quest", "\n".join(messages))
 
 if __name__ == "__main__":
     root = tk.Tk()
