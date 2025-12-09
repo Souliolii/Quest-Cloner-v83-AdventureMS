@@ -152,33 +152,6 @@ pip install -r requirements.txt
 Run
 python main.py
 
-📂 Folder Structure
-quest_editor_pyside/
-│
-├── app/
-│   ├── ui/
-│   │   ├── main_window.py
-│   │   ├── quest_editor_panel.py
-│   │   ├── quest_list_panel.py
-│   │   ├── middle_actions_panel.py
-│   │   ├── collapsible_section.py
-│   │   ├── quest_info_form.py
-│   │   ├── requirements_form.py
-│   │   └── rewards_form.py
-│   │
-│   ├── xml/
-│   │   ├── xml_loader.py
-│   │   ├── questinfo_helpers.py
-│   │   ├── check_helpers.py
-│   │   └── act_helpers.py
-│   │
-│   └── core/
-│       └── settings.py
-│
-├── theme.qss
-├── main.py
-└── README.md
-
 🛠 How to Use
 1) Load QuestInfo, Check, Act XMLs
 
