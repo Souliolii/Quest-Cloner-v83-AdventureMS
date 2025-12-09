@@ -1,0 +1,137 @@
+/* ===========================
+   Global
+   =========================== */
+
+QWidget {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 10pt;
+}
+
+/* Scroll areas */
+QScrollArea {
+    border: none;
+    background-color: #1e1e1e;
+}
+
+/* Main window */
+QMainWindow {
+    background-color: #1e1e1e;
+}
+
+/* ===========================
+   Toolbar
+   =========================== */
+
+QToolBar {
+    background-color: #252526;
+    border: 0px;
+    padding: 4px;
+}
+
+QToolBar QToolButton {
+    padding: 4px 10px;
+    border-radius: 4px;
+    color: #f0f0f0;
+}
+
+QToolBar QToolButton:hover {
+    background-color: #3a3d41;
+}
+
+QToolBar QToolButton:pressed {
+    background-color: #2d2f33;
+}
+
+/* ===========================
+   Buttons
+   =========================== */
+
+QPushButton {
+    padding: 6px 12px;
+    border-radius: 4px;
+    background-color: #0e639c;
+    color: #ffffff;
+    border: none;
+}
+
+QPushButton:hover {
+    background-color: #1177bb;
+}
+
+QPushButton:pressed {
+    background-color: #0b4975;
+}
+
+/* ===========================
+   Inputs
+   =========================== */
+
+QLineEdit,
+QTextEdit,
+QPlainTextEdit,
+QSpinBox,
+QComboBox {
+    background-color: #1e1e1e;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+    color: #d4d4d4;
+    padding: 4px;
+}
+
+QLineEdit:focus,
+QTextEdit:focus,
+QPlainTextEdit:focus,
+QComboBox:focus {
+    border: 1px solid #007acc;
+}
+
+/* ===========================
+   List / Quest sidebar
+   =========================== */
+
+QListWidget {
+    background-color: #252526;
+    border: 1px solid #3c3c3c;
+    border-radius: 4px;
+}
+
+QListWidget::item {
+    padding: 4px 6px;
+}
+
+QListWidget::item:selected {
+    background-color: #094771;
+    color: #ffffff;
+}
+
+/* ===========================
+   Collapsible sections
+   =========================== */
+
+QToolButton#CollapsibleHeader {
+    background-color: #252526;
+    border: none;
+    padding: 6px 8px;
+    text-align: left;
+    font-weight: bold;
+}
+
+QToolButton#CollapsibleHeader:checked {
+    background-color: #2d2f33;
+}
+
+/* Frame inside sections */
+QFrame#CollapsibleContent {
+    background-color: #1e1e1e;
+    border-left: 1px solid #3c3c3c;
+    border-right: 1px solid #3c3c3c;
+    border-bottom: 1px solid #3c3c3c;
+    border-radius: 0 0 6px 6px;
+}
+
+/* Labels in forms */
+QLabel {
+    color: #cccccc;
+}

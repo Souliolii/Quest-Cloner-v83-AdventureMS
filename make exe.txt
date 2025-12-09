@@ -1,1 +1,7 @@
-py -m PyInstaller --noconsole --onefile quest_helper_gui.py
+python -m PyInstaller ^
+  --noconfirm ^
+  --onefile ^
+  --windowed ^
+  --name "MapleStory Quest Editor" ^
+  --add-data "resources\\theme.qss;resources" ^
+  main.py

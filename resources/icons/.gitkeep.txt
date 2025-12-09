@@ -1,0 +1,1 @@
+# Empty file just so the icons directory exists in git.
